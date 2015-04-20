@@ -21,7 +21,7 @@ SPI_IOC_WR_BITS_PER_WORD = _IOW(SPI_IOC_MAGIC, 3, "=B")
 SPI_IOC_RD_MAX_SPEED_HZ  = _IOR(SPI_IOC_MAGIC, 4, "=I")
 SPI_IOC_WR_MAX_SPEED_HZ  = _IOW(SPI_IOC_MAGIC, 4, "=I")
 
-class lepton(object):
+class Lepton(object):
   ROWS = 60
   COLS = 80
   VOSPI_FRAME_SIZE = COLS + 2

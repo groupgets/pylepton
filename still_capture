@@ -3,10 +3,10 @@
 import sys
 import numpy as np
 import cv2
-from lepton import lepton
+from lepton import Lepton
 
 def capture(flip_v = False):
-  with lepton() as l:
+  with Lepton() as l:
     a,_ = l.transfer()
   a = np.ndarray((60,80,1), dtype=np.uint16)
   a = a[:,2:,:]

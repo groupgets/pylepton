@@ -5,7 +5,7 @@ import picamera
 import numpy as np
 import cv2
 import traceback
-from lepton import lepton
+from lepton import Lepton
 
 def main(flip_v = False, alpha = 128):
   # Create an array representing a 1280x720 image of
@@ -26,7 +26,7 @@ def main(flip_v = False, alpha = 128):
     o = camera.add_overlay(np.getbuffer(a), size=(320,240), layer=3, alpha=alpha, crop=(0,0,80,60), vflip=flip_v)
     try:
       time.sleep(0.2) # give the overlay buffers a chance to initialize
-      with lepton() as l:
+      with Lepton() as l:
         last_nr = 0
         while True:
           _,nr = l.transfer(a2)

@@ -1,1 +1,3 @@
-import lepton
+__all__ = ["Lepton"]
+
+from Lepton import Lepton
