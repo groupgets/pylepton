@@ -2,9 +2,13 @@
 
 Quick and dirty pure python library for capturing images from the Lepton over SPI (for example, on a Raspberry PI).
 
-Requires `python-opencv` and `python-numpy`:
+Requires `cv2` and `numpy` modules, if you don't have them already. On a Debian-based system you can probably do this:
 
     $ sudo apt-get install python-opencv python-numpy
+
+You can run the examples in the working directory, but a distutils setup is included to install into site-packages for distribution:
+
+    $ python setup.py install
 
 ## Example programs
 
