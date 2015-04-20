@@ -1,0 +1,37 @@
+#!/usr/bin/env python
+
+import sys
+import numpy as np
+import cv2
+from lepton import lepton
+
+def capture(flip_v = False):
+  with lepton() as l:
+    a,_ = l.transfer()
+  a = np.ndarray((60,80,1), dtype=np.uint16)
+  a = a[:,2:,:]
+  a.byteswap(True)
+  if flip_v:
+    cv2.flip(a,0,a)
+  cv2.normalize(a, a, 0, 65535, cv2.NORM_MINMAX)
+  np.right_shift(a, 8, a)
+  return np.uint8(a)
+
+if __name__ == '__main__':
+  from optparse import OptionParser
+
+  usage = "usage: %prog [options] output_file[.format]"
+  parser = OptionParser(usage=usage)
+
+  parser.add_option("-f", "--flip-vertical",
+                    action="store_true", dest="flip_v", default=False,
+                    help="flip the output image vertically")
+
+  (options, args) = parser.parse_args()
+
+  if len(args) < 1:
+    print "You must specify an output filename"
+    sys.exit(1)
+
+  image = capture(flip_v = options.flip_v)
+  cv2.imwrite(args[0], image)
