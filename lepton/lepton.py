@@ -49,7 +49,7 @@ class lepton(object):
     # };
     self.__xmit_struct = struct.Struct("=QQIIHBBBBH")
     self.__xmit_buf = ctypes.create_string_buffer(self.__xmit_struct.size)
-    self.__msg = _IOW(SPI_IOC_MAGIC, 0, self.__xmit_struct.format))
+    self.__msg = _IOW(SPI_IOC_MAGIC, 0, self.__xmit_struct.format)
 
   def __enter__(self):
     self.__handle = open(self.__spi_dev, "w+")
