@@ -22,6 +22,12 @@ SPI_IOC_RD_MAX_SPEED_HZ  = _IOR(SPI_IOC_MAGIC, 4, "=I")
 SPI_IOC_WR_MAX_SPEED_HZ  = _IOW(SPI_IOC_MAGIC, 4, "=I")
 
 class Lepton(object):
+  """Communication class for FLIR Lepton module on SPI
+
+  Args:
+    spi_dev (str): Location of SPI device node. Default '/dev/spidev0.0'.
+  """
+
   ROWS = 60
   COLS = 80
   VOSPI_FRAME_SIZE = COLS + 2
@@ -68,22 +74,36 @@ class Lepton(object):
   def __exit__(self, type, value, tb):
     self.__handle.close()
 
-  def capture(self, a = None):
-    if a is None:
-      a = np.ndarray((Lepton.ROWS, Lepton.VOSPI_FRAME_SIZE, 1), dtype=np.uint16)
-    elif a.nbytes < Lepton.ROWS * Lepton.VOSPI_FRAME_SIZE_BYTES:
+  def capture(self, data_buffer = None):
+    """Capture a frame of data.
+
+    Captures 80x60 uint16 array of non-normalized (raw 12-bit) data. Returns that frame and a frame_id (which
+    is currently just the sum of all pixels). The Lepton will return multiple, identical frames at a rate of up
+    to ~27 Hz, with unique frames at only ~9 Hz, so the frame_id can help you from doing additional work
+    processing duplicate frames.
+
+    Args:
+      data_buffer (numpy.ndarray): Optional. If specified, should be ``(60,80,1)`` with `dtype`=``numpy.uint16``.
+
+    Returns:
+      tuple consisting of (data_buffer, frame_id)
+    """
+
+    if data_buffer is None:
+      data_buffer = np.ndarray((Lepton.ROWS, Lepton.VOSPI_FRAME_SIZE, 1), dtype=np.uint16)
+    elif data_buffer.nbytes < Lepton.ROWS * Lepton.VOSPI_FRAME_SIZE_BYTES:
       raise Exception("Provided input array not large enough")
 
-    rxs = a.ctypes.data
+    rxs = data_buffer.ctypes.data
     rxs_end = rxs + Lepton.ROWS * Lepton.VOSPI_FRAME_SIZE_BYTES
     txs = self.__txbuf.ctypes.data
     synced = False
     while rxs < rxs_end:
       self.__xmit_struct.pack_into(self.__xmit_buf, 0, txs, rxs, Lepton.VOSPI_FRAME_SIZE_BYTES, Lepton.SPEED, 0, Lepton.BITS, 0, Lepton.BITS, Lepton.BITS, 0)
       ioctl(self.__handle, self.__msg, self.__xmit_buf)
-      if synced or a[0,0] & 0x0f00 != 0x0f00:
+      if synced or data_buffer[0,0] & 0x0f00 != 0x0f00:
         synced = True
         rxs += Lepton.VOSPI_FRAME_SIZE_BYTES
 
     # TODO: turn on telemetry to get real frame id, sum on this array is fast enough though (< 500us)
-    return a, a.sum()
+    return data_buffer, data_buffer.sum()
