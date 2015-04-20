@@ -29,7 +29,7 @@ def main(flip_v = False, alpha = 128):
       with Lepton() as l:
         last_nr = 0
         while True:
-          _,nr = l.transfer(a2)
+          _,nr = l.capture(a2)
           if nr == s:
             # no need to redo this frame
             continue

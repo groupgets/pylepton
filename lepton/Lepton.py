@@ -68,7 +68,7 @@ class Lepton(object):
   def __exit__(self, type, value, tb):
     self.__handle.close()
 
-  def transfer(self, a = None):
+  def capture(self, a = None):
     if a is None:
       a = np.ndarray((Lepton.ROWS, Lepton.VOSPI_FRAME_SIZE, 1), dtype=np.uint16)
     elif a.nbytes < Lepton.ROWS * Lepton.VOSPI_FRAME_SIZE_BYTES:
