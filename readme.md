@@ -1,4 +1,4 @@
-# python-lepton
+# pylepton
 
 Quick and dirty pure python library for capturing images from the Lepton over SPI (for example, on a Raspberry PI).
 

@@ -5,7 +5,7 @@ import picamera
 import numpy as np
 import cv2
 import traceback
-from lepton import Lepton
+from pylepton import Lepton
 
 def main(flip_v = False, alpha = 128):
   # Create an array representing a 1280x720 image of

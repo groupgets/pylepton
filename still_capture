@@ -3,7 +3,7 @@
 import sys
 import numpy as np
 import cv2
-from lepton import Lepton
+from pylepton import Lepton
 
 def capture(flip_v = False):
   with Lepton() as l:
