@@ -105,7 +105,7 @@ class Lepton(object):
         synced = True
         rxs += Lepton.VOSPI_FRAME_SIZE_BYTES
 
-    data_buffer[0:Lepton.ROWS,0:Lepton.COLS] = self.__capture_buf[0:Lepton.ROWS,2:Lepton.COLS]
+    data_buffer[0:Lepton.ROWS,0:Lepton.COLS] = self.__capture_buf[0:Lepton.ROWS,2:Lepton.VOSPI_FRAME_SIZE]
     data_buffer.byteswap(True)
 
     # TODO: turn on telemetry to get real frame id, sum on this array is fast enough though (< 500us)
