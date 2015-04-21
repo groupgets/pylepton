@@ -18,7 +18,7 @@ Requires `python-picamera`, a Raspberry PI, and compatible camera such as http:/
 
     $ sudo apt-get install python-picamera
 
-    $ ./pylepton_overlay --help
+    $ pylepton_overlay --help
     Usage: pylepton_overlay [options]
 
     Options:
@@ -27,13 +27,21 @@ Requires `python-picamera`, a Raspberry PI, and compatible camera such as http:/
       -a ALPHA, --alpha=ALPHA
                             set lepton overlay opacity
 
+To get a 100% lepton overlay (note camera installation still required):
+
+    $ pylepton_overlay -a 255
+
 ### pylepton_capture
 
 Note that this program will output any image format that opencv knows about, just specify the output file format extension (e.g. `output.jpg` or `output.png`)
 
-    $ ./pylepton_capture --help
+    $ pylepton_capture --help
     Usage: pylepton_capture [options] output_file[.format]
 
     Options:
       -h, --help           show this help message and exit
       -f, --flip-vertical  flip the output image vertically
+
+To capture a png file named `output.png`:
+
+    $ pylepton_capture output.png
