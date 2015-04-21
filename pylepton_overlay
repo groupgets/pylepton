@@ -7,7 +7,7 @@ import cv2
 import traceback
 from pylepton import Lepton
 
-def main(flip_v = False, alpha = 128):
+def main(flip_v = False, alpha = 128, device = "/dev/spidev0.0"):
   # Create an array representing a 1280x720 image of
   # a cross through the center of the display. The shape of
   # the array must be of the form (height, width, color)
@@ -25,7 +25,7 @@ def main(flip_v = False, alpha = 128):
     o = camera.add_overlay(np.getbuffer(a), size=(320,240), layer=3, alpha=int(alpha), crop=(0,0,80,60), vflip=flip_v)
     try:
       time.sleep(0.2) # give the overlay buffers a chance to initialize
-      with Lepton() as l:
+      with Lepton(device) as l:
         last_nr = 0
         while True:
           _,nr = l.capture(lepton_buf)
@@ -56,6 +56,10 @@ if __name__ == '__main__':
                     dest="alpha", default=128,
                     help="set lepton overlay opacity")
 
+  parser.add_option("-d", "--device",
+                    dest="device", default="/dev/spidev0.0",
+                    help="specify the spi device node (might be /dev/spidev0.1 on a newer device)")
+
   (options, args) = parser.parse_args()
 
-  main(flip_v = options.flip_v, alpha = options.alpha)
+  main(flip_v = options.flip_v, alpha = options.alpha, device = options.device)
