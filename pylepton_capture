@@ -8,7 +8,6 @@ from pylepton import Lepton
 def capture(flip_v = False):
   with Lepton() as l:
     a,_ = l.capture()
-  a = np.ndarray((60,80,1), dtype=np.uint16)
   a = a[:,2:,:]
   a.byteswap(True)
   if flip_v:
