@@ -19,5 +19,6 @@ setup(name='pylepton',
       author_email='kurt@kieferware.com',
       url='https://github.com/kekiefer/pylepton',
       packages = list(find_packages(pylepton.__path__, pylepton.__name__)),
+      scripts = ["pylepton_capture", "pylepton_overlay"],
       install_depends = ['numpy', 'cv2'],
      )

@@ -12,14 +12,14 @@ You can run the examples in the working directory, but a distutils setup is incl
 
 ## Example programs
 
-### picamera_overlay
+### pylepton_overlay
 
 Requires `python-picamera`, a Raspberry PI, and compatible camera such as http://www.adafruit.com/products/1367
 
     $ sudo apt-get install python-picamera
 
-    $ ./picamera_overlay --help
-    Usage: picamera_overlay [options]
+    $ ./pylepton_overlay --help
+    Usage: pylepton_overlay [options]
 
     Options:
       -h, --help            show this help message and exit
@@ -27,12 +27,12 @@ Requires `python-picamera`, a Raspberry PI, and compatible camera such as http:/
       -a ALPHA, --alpha=ALPHA
                             set lepton overlay opacity
 
-### still_capture
+### pylepton_capture
 
 Note that this program will output any image format that opencv knows about, just specify the output file format extension (e.g. `output.jpg` or `output.png`)
 
-    $ ./still_capture --help
-    Usage: still_capture [options] output_file[.format]
+    $ ./pylepton_capture --help
+    Usage: pylepton_capture [options] output_file[.format]
 
     Options:
       -h, --help           show this help message and exit
