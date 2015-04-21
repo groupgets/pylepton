@@ -91,7 +91,7 @@ class Lepton(object):
 
     if data_buffer is None:
       data_buffer = np.ndarray((Lepton.ROWS, Lepton.COLS, 1), dtype=np.uint16)
-    elif len(data_buffer.shape) < 2 or data_buffer.shape[0] < Lepton.ROWS or data_buffer.shape[1] < Lepton.COLS or data_buffer.elemsize < 2:
+    elif data_buffer.ndim < 2 or data_buffer.shape[0] < Lepton.ROWS or data_buffer.shape[1] < Lepton.COLS or data_buffer.itemsize < 2:
       raise Exception("Provided input array not large enough")
 
     rxs = self.__capture_buf.ctypes.data
