@@ -8,8 +8,6 @@ from pylepton import Lepton
 def capture(flip_v = False):
   with Lepton() as l:
     a,_ = l.capture()
-  a = a[:,2:,:]
-  a.byteswap(True)
   if flip_v:
     cv2.flip(a,0,a)
   cv2.normalize(a, a, 0, 65535, cv2.NORM_MINMAX)

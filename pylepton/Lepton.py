@@ -39,7 +39,6 @@ class Lepton(object):
   def __init__(self, spi_dev = "/dev/spidev0.0"):
     self.__spi_dev = spi_dev
     self.__txbuf = np.zeros(Lepton.VOSPI_FRAME_SIZE, dtype=np.uint16)
-    self.__rxbuf = np.zeros(Lepton.VOSPI_FRAME_SIZE, dtype='>u2')
 
     # struct spi_ioc_transfer {
     #   __u64     tx_buf;
@@ -56,6 +55,7 @@ class Lepton(object):
     self.__xmit_struct = struct.Struct("=QQIIHBBBBH")
     self.__xmit_buf = ctypes.create_string_buffer(self.__xmit_struct.size)
     self.__msg = _IOW(SPI_IOC_MAGIC, 0, self.__xmit_struct.format)
+    self.__capture_buf = np.zeros((60, 82, 1), dtype=np.uint16)
 
   def __enter__(self):
     self.__handle = open(self.__spi_dev, "w+")
@@ -90,11 +90,11 @@ class Lepton(object):
     """
 
     if data_buffer is None:
-      data_buffer = np.ndarray((Lepton.ROWS, Lepton.VOSPI_FRAME_SIZE, 1), dtype=np.uint16)
-    elif data_buffer.nbytes < Lepton.ROWS * Lepton.VOSPI_FRAME_SIZE_BYTES:
+      data_buffer = np.ndarray((Lepton.ROWS, Lepton.COLS, 1), dtype=np.uint16)
+    elif len(data_buffer.shape) < 2 or data_buffer.shape[0] < Lepton.ROWS or data_buffer.shape[1] < Lepton.COLS or data_buffer.elemsize < 2:
       raise Exception("Provided input array not large enough")
 
-    rxs = data_buffer.ctypes.data
+    rxs = self.__capture_buf.ctypes.data
     rxs_end = rxs + Lepton.ROWS * Lepton.VOSPI_FRAME_SIZE_BYTES
     txs = self.__txbuf.ctypes.data
     synced = False
@@ -104,6 +104,9 @@ class Lepton(object):
       if synced or data_buffer[0,0] & 0x0f00 != 0x0f00:
         synced = True
         rxs += Lepton.VOSPI_FRAME_SIZE_BYTES
+
+    data_buffer[0:Lepton.ROWS,0:Lepton.COLS] = self.__capture_buf[:2,:]
+    data_buffer.byteswap(True)
 
     # TODO: turn on telemetry to get real frame id, sum on this array is fast enough though (< 500us)
     return data_buffer, data_buffer.sum()

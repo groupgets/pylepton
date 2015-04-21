@@ -12,8 +12,7 @@ def main(flip_v = False, alpha = 128):
   # a cross through the center of the display. The shape of
   # the array must be of the form (height, width, color)
   a = np.zeros((240, 320, 3), dtype=np.uint8)
-  a2 = np.zeros((60, 82, 1), dtype=np.uint16)
-  a3 = np.zeros((60, 80, 1), dtype=np.uint16)
+  lepton_buf = np.zeros((60, 80, 1), dtype=np.uint16)
 
   with picamera.PiCamera() as camera:
     camera.resolution = (640, 480)
@@ -29,15 +28,14 @@ def main(flip_v = False, alpha = 128):
       with Lepton() as l:
         last_nr = 0
         while True:
-          _,nr = l.capture(a2)
+          _,nr = l.capture(lepton_buf)
           if nr == last_nr:
             # no need to redo this frame
             continue
           last_nr = nr
-          a2.byteswap(True)
-          cv2.normalize(a2[:,2:,:], a3, 0, 65535, cv2.NORM_MINMAX)
-          np.right_shift(a3, 8, a3)
-          a[:a3.shape[0], :a3.shape[1], :] = a3
+          cv2.normalize(lepton_buf, lepton_buf, 0, 65535, cv2.NORM_MINMAX)
+          np.right_shift(lepton_buf, 8, lepton_buf)
+          a[:lepton_buf.shape[0], :lepton_buf.shape[1], :] = lepton_buf
           o.update(np.getbuffer(a))
     except Exception:
       traceback.print_exc()
