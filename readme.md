@@ -8,7 +8,7 @@ Requires `cv2` and `numpy` modules, if you don't have them already. On a Debian-
 
 You can run the examples in the working directory, but a distutils setup is included to install into site-packages for distribution:
 
-    $ python setup.py install
+    $ sudo python setup.py install
 
 ## Example programs
 
