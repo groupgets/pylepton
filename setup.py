@@ -13,7 +13,7 @@ def find_packages(path=".", prefix=""):
             yield name
 
 setup(name='pylepton',
-      version='0.1.1',
+      version='0.1.2',
       description='FLIR Lepton interface library for Python',
       author='Kurt Kiefer',
       author_email='kurt@kieferware.com',
