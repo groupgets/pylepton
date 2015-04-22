@@ -101,7 +101,7 @@ class Lepton(object):
     while rxs < rxs_end:
       self.__xmit_struct.pack_into(self.__xmit_buf, 0, txs, rxs, Lepton.VOSPI_FRAME_SIZE_BYTES, Lepton.SPEED, 0, Lepton.BITS, 0, Lepton.BITS, Lepton.BITS, 0)
       ioctl(self.__handle, self.__msg, self.__xmit_buf)
-      if synced or data_buffer[0,0] & 0x0f00 != 0x0f00:
+      if synced or self.__capture_buf[0,0] & 0x0f00 != 0x0f00:
         synced = True
         rxs += Lepton.VOSPI_FRAME_SIZE_BYTES
 
