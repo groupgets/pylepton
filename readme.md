@@ -26,6 +26,12 @@ Image data from `capture()` is 12-bit, non-normalized (raw sensor data). Here we
 
 `capture()` returns a tuple that includes a unique frame ID, as lepton frames can update at ~27 Hz, but only unique ones are returned at ~9 Hz. Currently, this is just a simple sum, but ideally this will turn into a real frame ID from telemetry once this feature is implemented.
 
+Note also that the Lepton contructor can take as an optional argument the SPI device on which to find the Lepton. If in your system that device is `/dev/spidev0.1`, you can instantiate lepton as such:
+
+    ...
+    with Lepton("/dev/spidev0.1") as l:
+      ...
+
 ## Example programs
 
 ### pylepton_overlay
