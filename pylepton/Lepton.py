@@ -3,6 +3,7 @@
 import numpy as np
 import ctypes
 import struct
+import time
 
 from ioctl_numbers import _IOR, _IOW
 from fcntl import ioctl
@@ -48,14 +49,24 @@ class Lepton(object):
     #   __u16     delay_usecs;
     #   __u8      bits_per_word;
     #   __u8      cs_change;
-    #   __u8      tx_nbits;
-    #   __u8      rx_nbits;
-    #   __u16     pad;
+    #   __u32     pad;
     # };
-    self.__xmit_struct = struct.Struct("=QQIIHBBBBH")
-    self.__xmit_buf = ctypes.create_string_buffer(self.__xmit_struct.size)
+    self.__xmit_struct = struct.Struct("=QQIIHBBI")
+    self.__msg_size = self.__xmit_struct.size
+    self.__xmit_buf = np.zeros((self.__msg_size * Lepton.ROWS), dtype=np.uint8)
     self.__msg = _IOW(SPI_IOC_MAGIC, 0, self.__xmit_struct.format)
-    self.__capture_buf = np.zeros((60, 82, 1), dtype=np.uint16)
+    self.__capture_buf = np.zeros((Lepton.ROWS, Lepton.VOSPI_FRAME_SIZE, 1), dtype=np.uint16)
+
+    for i in range(Lepton.ROWS):
+      self.__xmit_struct.pack_into(self.__xmit_buf, i * self.__msg_size,
+        self.__txbuf.ctypes.data,                                            #   __u64     tx_buf;
+        self.__capture_buf.ctypes.data + Lepton.VOSPI_FRAME_SIZE_BYTES * i,  #   __u64     rx_buf;
+        Lepton.VOSPI_FRAME_SIZE_BYTES,                                      #   __u32     len;
+        Lepton.SPEED,                                                       #   __u32     speed_hz;
+        0,                                                                  #   __u16     delay_usecs;
+        Lepton.BITS,                                                        #   __u8      bits_per_word;
+        1,                                                                  #   __u8      cs_change;
+        0)                                                                  #   __u32     pad;
 
   def __enter__(self):
     self.__handle = open(self.__spi_dev, "w+")
@@ -74,7 +85,39 @@ class Lepton(object):
   def __exit__(self, type, value, tb):
     self.__handle.close()
 
-  def capture(self, data_buffer = None):
+  @staticmethod
+  def capture_segment(handle, xs_buf, xs_size, capture_buf):
+    messages = Lepton.ROWS
+
+    iow = _IOW(SPI_IOC_MAGIC, 0, xs_size)
+    ioctl(handle, iow, xs_buf, True)
+
+    while (capture_buf[0] & 0x000f) == 0x000f: # byteswapped 0x0f00
+      ioctl(handle, iow, xs_buf, True)
+
+    messages -= 1
+
+    # NB: the default spidev bufsiz is 4096 bytes so that's where the 24 message limit comes from: 4096 / Lepton.VOSPI_FRAME_SIZE_BYTES = 24.97...
+    # This 24 message limit works OK, but if you really need to optimize the read speed here, this hack is for you:
+
+    # The limit can be changed when spidev is loaded, but since it is compiled statically into newer raspbian kernels, that means
+    # modifying the kernel boot args to pass this option. This works too:
+    #   $ sudo chmod 666 /sys/module/spidev/parameters/bufsiz
+    #   $ echo 65536 > /sys/module/spidev/parameters/bufsiz
+    # Then the 24 message limit below can be raised.
+
+    while messages > 0:
+      if messages > 24:
+        count = 24
+      else:
+        count = messages
+      iow = _IOW(SPI_IOC_MAGIC, 0, xs_size * count)
+      ret = ioctl(handle, iow, xs_buf[xs_size * (60 - messages):], True)
+      if ret < 1:
+        raise IOError("can't send {0} spi messages ({1})".format(60, ret))
+      messages -= count
+
+  def capture(self, data_buffer = None, log_time = False, debug_print = False):
     """Capture a frame of data.
 
     Captures 80x60 uint16 array of non-normalized (raw 12-bit) data. Returns that frame and a frame_id (which
@@ -89,24 +132,31 @@ class Lepton(object):
       tuple consisting of (data_buffer, frame_id)
     """
 
+    start = time.time()
+
     if data_buffer is None:
       data_buffer = np.ndarray((Lepton.ROWS, Lepton.COLS, 1), dtype=np.uint16)
     elif data_buffer.ndim < 2 or data_buffer.shape[0] < Lepton.ROWS or data_buffer.shape[1] < Lepton.COLS or data_buffer.itemsize < 2:
       raise Exception("Provided input array not large enough")
 
-    rxs = self.__capture_buf.ctypes.data
-    rxs_end = rxs + Lepton.ROWS * Lepton.VOSPI_FRAME_SIZE_BYTES
-    txs = self.__txbuf.ctypes.data
-    synced = False
-    while rxs < rxs_end:
-      self.__xmit_struct.pack_into(self.__xmit_buf, 0, txs, rxs, Lepton.VOSPI_FRAME_SIZE_BYTES, Lepton.SPEED, 0, Lepton.BITS, 0, Lepton.BITS, Lepton.BITS, 0)
-      ioctl(self.__handle, self.__msg, self.__xmit_buf)
-      if synced or self.__capture_buf[0,0] & 0x0f00 != 0x0f00:
-        synced = True
-        rxs += Lepton.VOSPI_FRAME_SIZE_BYTES
+    Lepton.capture_segment(self.__handle, self.__xmit_buf, self.__msg_size, self.__capture_buf[0])
 
-    data_buffer[0:Lepton.ROWS,0:Lepton.COLS] = self.__capture_buf[0:Lepton.ROWS,2:Lepton.VOSPI_FRAME_SIZE]
-    data_buffer.byteswap(True)
+    self.__capture_buf.byteswap(True)
+    data_buffer[:,:] = self.__capture_buf[:,2:]
+
+    end = time.time()
+
+    if debug_print:
+      print "---"
+      for i in range(Lepton.ROWS):
+        fid = self.__capture_buf[i, 0, 0]
+        crc = self.__capture_buf[i, 1, 0]
+        fnum = fid & 0xFFF
+        print "0x{0:04x} 0x{1:04x} : Row {2:2} : crc={1}".format(fid, crc, fnum)
+      print "---"
+
+    if log_time:
+      print "frame processed int {0}s, {1}hz".format(end-start, 1.0/(end-start))
 
     # TODO: turn on telemetry to get real frame id, sum on this array is fast enough though (< 500us)
     return data_buffer, data_buffer.sum()
