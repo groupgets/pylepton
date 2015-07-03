@@ -22,6 +22,13 @@ SPI_IOC_WR_BITS_PER_WORD = _IOW(SPI_IOC_MAGIC, 3, "=B")
 SPI_IOC_RD_MAX_SPEED_HZ  = _IOR(SPI_IOC_MAGIC, 4, "=I")
 SPI_IOC_WR_MAX_SPEED_HZ  = _IOW(SPI_IOC_MAGIC, 4, "=I")
 
+SPI_CPHA   = 0x01                 # /* clock phase */
+SPI_CPOL   = 0x02                 # /* clock polarity */
+SPI_MODE_0 = (0|0)                # /* (original MicroWire) */
+SPI_MODE_1 = (0|SPI_CPHA)
+SPI_MODE_2 = (SPI_CPOL|0)
+SPI_MODE_3 = (SPI_CPOL|SPI_CPHA)
+
 class Lepton(object):
   """Communication class for FLIR Lepton module on SPI
 
@@ -33,7 +40,7 @@ class Lepton(object):
   COLS = 80
   VOSPI_FRAME_SIZE = COLS + 2
   VOSPI_FRAME_SIZE_BYTES = VOSPI_FRAME_SIZE * 2
-  MODE = 0
+  MODE = SPI_MODE_3
   BITS = 8
   SPEED = 18000000
   SPIDEV_MESSAGE_LIMIT = 24
