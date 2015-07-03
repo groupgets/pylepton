@@ -36,6 +36,7 @@ class Lepton(object):
   MODE = 0
   BITS = 8
   SPEED = 18000000
+  SPIDEV_MESSAGE_LIMIT = 24
 
   def __init__(self, spi_dev = "/dev/spidev0.0"):
     self.__spi_dev = spi_dev
@@ -104,11 +105,11 @@ class Lepton(object):
     # modifying the kernel boot args to pass this option. This works too:
     #   $ sudo chmod 666 /sys/module/spidev/parameters/bufsiz
     #   $ echo 65536 > /sys/module/spidev/parameters/bufsiz
-    # Then the 24 message limit below can be raised.
+    # Then Lepton.SPIDEV_MESSAGE_LIMIT of 24 can be raised to 59
 
     while messages > 0:
-      if messages > 24:
-        count = 24
+      if messages > Lepton.SPIDEV_MESSAGE_LIMIT:
+        count = Lepton.SPIDEV_MESSAGE_LIMIT
       else:
         count = messages
       iow = _IOW(SPI_IOC_MAGIC, 0, xs_size * count)
