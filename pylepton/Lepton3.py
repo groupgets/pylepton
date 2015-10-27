@@ -46,7 +46,7 @@ class Lepton3(Lepton):
   def capture(self, data_buffer = None, debug_print = False):
 
     if data_buffer is None:
-      data_buffer = np.zeros((Lepton.ROWS * 2, Lepton.COLS * 2), dtype=np.uint16)
+      data_buffer = np.ndarray((Lepton.ROWS * 2, Lepton.COLS * 2), dtype=np.uint16)
     elif data_buffer.ndim < 2 or data_buffer.shape[0] < Lepton.ROWS * 2 or data_buffer.shape[1] < Lepton.COLS * 2 or data_buffer.itemsize < 2:
       raise Exception("Provided input array not large enough")
 
@@ -87,7 +87,7 @@ class Lepton3(Lepton):
 
     data_buffer.shape = (240, 80)
     data_buffer[:,:] = self._capture_buf[:,2:]
-    data_buffer.shape = (120, 160)
+    data_buffer.shape = (120, 160, 1)
 
     # TODO: turn on telemetry to get real frame id, sum on this array is fast enough though (< 500us)
     return data_buffer, data_buffer.sum()

@@ -46,8 +46,8 @@ class Lepton(object):
   SPIDEV_MESSAGE_LIMIT = 24
 
   def __init__(self, spi_dev = "/dev/spidev0.0"):
-    self.__spi_dev = spi_dev
-    self.__txbuf = np.zeros(Lepton.VOSPI_FRAME_SIZE, dtype=np.uint16)
+    self._spi_dev = spi_dev
+    self._txbuf = np.zeros(Lepton.VOSPI_FRAME_SIZE, dtype=np.uint16)
 
     # struct spi_ioc_transfer {
     #   __u64     tx_buf;
@@ -59,16 +59,16 @@ class Lepton(object):
     #   __u8      cs_change;
     #   __u32     pad;
     # };
-    self.__xmit_struct = struct.Struct("=QQIIHBBI")
-    self.__msg_size = self.__xmit_struct.size
-    self.__xmit_buf = np.zeros((self.__msg_size * Lepton.ROWS), dtype=np.uint8)
-    self.__msg = _IOW(SPI_IOC_MAGIC, 0, self.__xmit_struct.format)
-    self.__capture_buf = np.zeros((Lepton.ROWS, Lepton.VOSPI_FRAME_SIZE, 1), dtype=np.uint16)
+    self._xmit_struct = struct.Struct("=QQIIHBBI")
+    self._msg_size = self._xmit_struct.size
+    self._xmit_buf = np.zeros((self._msg_size * Lepton.ROWS), dtype=np.uint8)
+    self._msg = _IOW(SPI_IOC_MAGIC, 0, self._xmit_struct.format)
+    self._capture_buf = np.zeros((Lepton.ROWS, Lepton.VOSPI_FRAME_SIZE, 1), dtype=np.uint16)
 
     for i in range(Lepton.ROWS):
-      self.__xmit_struct.pack_into(self.__xmit_buf, i * self.__msg_size,
-        self.__txbuf.ctypes.data,                                            #   __u64     tx_buf;
-        self.__capture_buf.ctypes.data + Lepton.VOSPI_FRAME_SIZE_BYTES * i,  #   __u64     rx_buf;
+      self._xmit_struct.pack_into(self._xmit_buf, i * self._msg_size,
+        self._txbuf.ctypes.data,                                            #   __u64     tx_buf;
+        self._capture_buf.ctypes.data + Lepton.VOSPI_FRAME_SIZE_BYTES * i,  #   __u64     rx_buf;
         Lepton.VOSPI_FRAME_SIZE_BYTES,                                      #   __u32     len;
         Lepton.SPEED,                                                       #   __u32     speed_hz;
         0,                                                                  #   __u16     delay_usecs;
@@ -77,21 +77,21 @@ class Lepton(object):
         0)                                                                  #   __u32     pad;
 
   def __enter__(self):
-    self.__handle = open(self.__spi_dev, "w+")
+    self._handle = open(self._spi_dev, "w+")
 
-    ioctl(self.__handle, SPI_IOC_RD_MODE, struct.pack("=B", Lepton.MODE))
-    ioctl(self.__handle, SPI_IOC_WR_MODE, struct.pack("=B", Lepton.MODE))
+    ioctl(self._handle, SPI_IOC_RD_MODE, struct.pack("=B", Lepton.MODE))
+    ioctl(self._handle, SPI_IOC_WR_MODE, struct.pack("=B", Lepton.MODE))
 
-    ioctl(self.__handle, SPI_IOC_RD_BITS_PER_WORD, struct.pack("=B", Lepton.BITS))
-    ioctl(self.__handle, SPI_IOC_WR_BITS_PER_WORD, struct.pack("=B", Lepton.BITS))
+    ioctl(self._handle, SPI_IOC_RD_BITS_PER_WORD, struct.pack("=B", Lepton.BITS))
+    ioctl(self._handle, SPI_IOC_WR_BITS_PER_WORD, struct.pack("=B", Lepton.BITS))
 
-    ioctl(self.__handle, SPI_IOC_RD_MAX_SPEED_HZ, struct.pack("=I", Lepton.SPEED))
-    ioctl(self.__handle, SPI_IOC_WR_MAX_SPEED_HZ, struct.pack("=I", Lepton.SPEED))
+    ioctl(self._handle, SPI_IOC_RD_MAX_SPEED_HZ, struct.pack("=I", Lepton.SPEED))
+    ioctl(self._handle, SPI_IOC_WR_MAX_SPEED_HZ, struct.pack("=I", Lepton.SPEED))
 
     return self
 
   def __exit__(self, type, value, tb):
-    self.__handle.close()
+    self._handle.close()
 
   @staticmethod
   def capture_segment(handle, xs_buf, xs_size, capture_buf):
@@ -148,8 +148,8 @@ class Lepton(object):
       raise Exception("Provided input array not large enough")
 
     while True:
-      Lepton.capture_segment(self.__handle, self.__xmit_buf, self.__msg_size, self.__capture_buf[0])
-      if retry_reset and (self.__capture_buf[20, 0] & 0xFF0F) != 0x1400: # make sure that this is a well-formed frame, should find line 20 here
+      Lepton.capture_segment(self._handle, self._xmit_buf, self._msg_size, self._capture_buf[0])
+      if retry_reset and (self._capture_buf[20, 0] & 0xFF0F) != 0x1400: # make sure that this is a well-formed frame, should find line 20 here
         # Leave chip select deasserted for at least 185 ms to reset
         if debug_print:
           print "Garbage frame number reset waiting..."
@@ -157,16 +157,16 @@ class Lepton(object):
       else:
         break
 
-    self.__capture_buf.byteswap(True)
-    data_buffer[:,:] = self.__capture_buf[:,2:]
+    self._capture_buf.byteswap(True)
+    data_buffer[:,:] = self._capture_buf[:,2:]
 
     end = time.time()
 
     if debug_print:
       print "---"
       for i in range(Lepton.ROWS):
-        fid = self.__capture_buf[i, 0, 0]
-        crc = self.__capture_buf[i, 1, 0]
+        fid = self._capture_buf[i, 0, 0]
+        crc = self._capture_buf[i, 1, 0]
         fnum = fid & 0xFFF
         print "0x{0:04x} 0x{1:04x} : Row {2:2} : crc={1}".format(fid, crc, fnum)
       print "---"
