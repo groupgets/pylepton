@@ -3,10 +3,10 @@
 import sys
 import numpy as np
 import cv2
-from pylepton import Lepton
+from pylepton.Lepton3 import Lepton3
 
 def capture(flip_v = False, device = "/dev/spidev0.0"):
-  with Lepton(device) as l:
+  with Lepton3(device) as l:
     a,_ = l.capture()
   if flip_v:
     cv2.flip(a,0,a)
