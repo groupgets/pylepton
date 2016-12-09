@@ -76,7 +76,7 @@ This program captures a single snapshot from the Lepton, displays it on screen, 
     Usage: pylepton_snapshot
 
 
-### pylepton_feed
+### pylepton_livefeed
 
 This program displays a live feed from the Lepton by repeatedly refreshing an image window. The sliders provided allow for modifying the refresh rate.
 
