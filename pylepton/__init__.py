@@ -1,3 +1,4 @@
 __all__ = ["Lepton"]
 
-from Lepton import Lepton
+# relative imports in Python3 must be explicit
+from .Lepton import Lepton
