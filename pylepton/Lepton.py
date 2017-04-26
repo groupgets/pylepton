@@ -5,7 +5,8 @@ import ctypes
 import struct
 import time
 
-from ioctl_numbers import _IOR, _IOW
+# relative imports in Python3 must be explicit
+from .ioctl_numbers import _IOR, _IOW
 from fcntl import ioctl
 
 SPI_IOC_MAGIC   = ord("k")
@@ -77,7 +78,8 @@ class Lepton(object):
         0)                                                                  #   __u32     pad;
 
   def __enter__(self):
-    self.__handle = open(self.__spi_dev, "w+")
+    # "In Python 3 the only way to open /dev/tty under Linux appears to be 1) in binary mode and 2) with buffering disabled."
+    self.__handle = open(self.__spi_dev, "wb+", buffering=0)
 
     ioctl(self.__handle, SPI_IOC_RD_MODE, struct.pack("=B", Lepton.MODE))
     ioctl(self.__handle, SPI_IOC_WR_MODE, struct.pack("=B", Lepton.MODE))
@@ -152,7 +154,7 @@ class Lepton(object):
       if retry_reset and (self.__capture_buf[20, 0] & 0xFF0F) != 0x1400: # make sure that this is a well-formed frame, should find line 20 here
         # Leave chip select deasserted for at least 185 ms to reset
         if debug_print:
-          print "Garbage frame number reset waiting..."
+          print("Garbage frame number reset waiting...")
         time.sleep(0.185)
       else:
         break
@@ -163,16 +165,16 @@ class Lepton(object):
     end = time.time()
 
     if debug_print:
-      print "---"
+      print("---")
       for i in range(Lepton.ROWS):
         fid = self.__capture_buf[i, 0, 0]
         crc = self.__capture_buf[i, 1, 0]
         fnum = fid & 0xFFF
-        print "0x{0:04x} 0x{1:04x} : Row {2:2} : crc={1}".format(fid, crc, fnum)
-      print "---"
+        print("0x{0:04x} 0x{1:04x} : Row {2:2} : crc={1}".format(fid, crc, fnum))
+      print("---")
 
     if log_time:
-      print "frame processed int {0}s, {1}hz".format(end-start, 1.0/(end-start))
+      print("frame processed int {0}s, {1}hz".format(end-start, 1.0/(end-start)))
 
     # TODO: turn on telemetry to get real frame id, sum on this array is fast enough though (< 500us)
     return data_buffer, data_buffer.sum()
