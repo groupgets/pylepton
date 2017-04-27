@@ -39,7 +39,8 @@ _IOC_READ = 2
 
 
 def _IOC(dir, type, nr, size):
-    if isinstance(size, str) or isinstance(size, unicode):
+    # in Python3, unicode -> str; str -> bytes
+    if isinstance(size, bytes) or isinstance(size, str):
         size = struct.calcsize(size)
     return dir  << _IOC_DIRSHIFT  | \
            type << _IOC_TYPESHIFT | \
