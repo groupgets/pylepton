@@ -67,3 +67,17 @@ Note that this program will output any image format that opencv knows about, jus
 To capture a png file named `output.png`:
 
     $ pylepton_capture output.png
+
+
+### pylepton_snapshot
+
+This program captures a single snapshot from the Lepton, displays it on screen, and also saves a copy as "images/snap.jpg".
+
+    Usage: pylepton_snapshot
+
+
+### pylepton_livefeed
+
+This program displays a live feed from the Lepton by repeatedly refreshing an image window. The sliders provided allow for modifying the refresh rate.
+
+    Usage: pylepton_livefeed
