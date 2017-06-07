@@ -4,9 +4,9 @@ import numpy as np
 import ctypes
 import struct
 import time
+import crcmod
 
-# relative imports in Python3 must be explicit
-from .ioctl_numbers import _IOR, _IOW
+from ioctl_numbers import _IOR, _IOW
 from fcntl import ioctl
 
 SPI_IOC_MAGIC   = ord("k")
@@ -43,13 +43,13 @@ class Lepton(object):
   VOSPI_FRAME_SIZE_BYTES = VOSPI_FRAME_SIZE * 2
   MODE = SPI_MODE_3
   BITS = 8
-  SPEED = 18000000
+  SPEED = 10000000
   SPIDEV_MESSAGE_LIMIT = 24
 
   def __init__(self, spi_dev = "/dev/spidev0.0"):
     self.__spi_dev = spi_dev
     self.__txbuf = np.zeros(Lepton.VOSPI_FRAME_SIZE, dtype=np.uint16)
-
+    self.crcfunc = crcmod.mkCrcFun(0x11021,initCrc=0, rev=False,xorOut=0)
     # struct spi_ioc_transfer {
     #   __u64     tx_buf;
     #   __u64     rx_buf;
@@ -78,8 +78,7 @@ class Lepton(object):
         0)                                                                  #   __u32     pad;
 
   def __enter__(self):
-    # "In Python 3 the only way to open /dev/tty under Linux appears to be 1) in binary mode and 2) with buffering disabled."
-    self.__handle = open(self.__spi_dev, "wb+", buffering=0)
+    self.__handle = open(self.__spi_dev, "w+")
 
     ioctl(self.__handle, SPI_IOC_RD_MODE, struct.pack("=B", Lepton.MODE))
     ioctl(self.__handle, SPI_IOC_WR_MODE, struct.pack("=B", Lepton.MODE))
@@ -127,7 +126,38 @@ class Lepton(object):
         raise IOError("can't send {0} spi messages ({1})".format(60, ret))
       messages -= count
 
-  def capture(self, data_buffer = None, log_time = False, debug_print = False, retry_reset = True):
+  def imageValid(self):
+    """check a captured frame for validity (correct linenumbers and CRC)"""
+    
+    for i in range(Lepton.ROWS):
+        if (self.__capture_buf[i,0] & 0x0FFF) != i :
+        #if (self.__capture_buf[i,0] & 0xFF0F) != (i << 8) :
+            if self.debug_print:
+                print "line number check failed at line " + str(i)
+            return False
+        elif self.debug_print :
+            print "line number " +str(i)+ " checked"
+
+        
+        crc = self.__capture_buf[i, 1, 0]
+        tmp = self.__capture_buf[i].copy()
+        tmp[0,0] = tmp[0,0] & 0x0FFF
+        tmp[1,0] = 0
+        crc_calc = self.crcfunc(tmp.byteswap().tostring())        
+        #crc_calc = self.crcfunc(tmp)        
+        if crc_calc != crc:
+            if self.debug_print:
+                print "line crc check failed at line " + str(i)
+            return False
+        elif self.debug_print :
+            print "line " +str(i)+ " crc pass"
+                    
+    #end for loop. if nothing failed by now, we are golden!    
+    return True
+
+
+      
+  def capture(self, data_buffer = None, log_time = False, debug_print = False, retry_reset = True, max_resets = 50):
     """Capture a frame of data.
 
     Captures 80x60 uint16 array of non-normalized (raw 12-bit) data. Returns that frame and a frame_id (which
@@ -141,40 +171,58 @@ class Lepton(object):
     Returns:
       tuple consisting of (data_buffer, frame_id)
     """
-
+    self.debug_print = debug_print
+    
     start = time.time()
 
     if data_buffer is None:
       data_buffer = np.ndarray((Lepton.ROWS, Lepton.COLS, 1), dtype=np.uint16)
     elif data_buffer.ndim < 2 or data_buffer.shape[0] < Lepton.ROWS or data_buffer.shape[1] < Lepton.COLS or data_buffer.itemsize < 2:
       raise Exception("Provided input array not large enough")
-
+    
+    num_resets = 0
     while True:
       Lepton.capture_segment(self.__handle, self.__xmit_buf, self.__msg_size, self.__capture_buf[0])
-      if retry_reset and (self.__capture_buf[20, 0] & 0xFF0F) != 0x1400: # make sure that this is a well-formed frame, should find line 20 here
+      self.__capture_buf.byteswap(True)
+      
+      if retry_reset and num_resets <= max_resets and not self.imageValid():
         # Leave chip select deasserted for at least 185 ms to reset
         if debug_print:
-          print("Garbage frame number reset waiting...")
+          print "Garbage frame number reset waiting..."
         time.sleep(0.185)
+        num_resets = num_resets + 1
+      elif num_resets > max_resets:
+          raise IOError("Lepton sensor required too many resets")
       else:
         break
 
-    self.__capture_buf.byteswap(True)
-    data_buffer[:,:] = self.__capture_buf[:,2:]
+    
 
     end = time.time()
 
     if debug_print:
-      print("---")
+      crcfunc = crcmod.mkCrcFun(0x11021,initCrc=0, rev=False,xorOut=0)
+      print "---"
       for i in range(Lepton.ROWS):
         fid = self.__capture_buf[i, 0, 0]
         crc = self.__capture_buf[i, 1, 0]
+        tmp = self.__capture_buf[i].copy()
+        tmp[0,0] = tmp[0,0] & 0x0FFF
+        tmp[1,0] = 0
+        crc_calc = crcfunc(tmp.byteswap())
         fnum = fid & 0xFFF
-        print("0x{0:04x} 0x{1:04x} : Row {2:2} : crc={1}".format(fid, crc, fnum))
-      print("---")
+        print "0x{0:04x} 0x{1:04x} : Row {2:2} : crc={1} : crc_calc={3}".format(fid, crc, fnum, crc_calc)
+        if crc != crc_calc:
+            print "--- CRC mismatch ---"
+      print "---"
 
     if log_time:
-      print("frame processed int {0}s, {1}hz".format(end-start, 1.0/(end-start)))
+      print "frame processed int {0}s, {1}hz".format(end-start, 1.0/(end-start))
 
     # TODO: turn on telemetry to get real frame id, sum on this array is fast enough though (< 500us)
+    data_buffer[:,:] = self.__capture_buf[:,2:] # remove crc and fid from image
     return data_buffer, data_buffer.sum()
+
+if __name__ == "__main__":
+    with Lepton("/dev/spidev0.1") as l:
+        l.capture(debug_print = True, log_time=True)
