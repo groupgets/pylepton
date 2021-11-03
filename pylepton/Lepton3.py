@@ -5,10 +5,10 @@ import ctypes
 import struct
 import time
 
-from ioctl_numbers import _IOR, _IOW
+from .ioctl_numbers import _IOR, _IOW
 from fcntl import ioctl
 
-from Lepton import Lepton
+from .Lepton import Lepton
 
 SPI_IOC_MAGIC   = ord("k")
 
@@ -69,7 +69,7 @@ class Lepton3(Lepton):
     self._capture_buf.byteswap(True)
 
     if debug_print:
-      print "---"
+      print("---")
       for i in range(240):
         fid = self._capture_buf[i, 0]
         crc = self._capture_buf[i, 1]
@@ -80,10 +80,10 @@ class Lepton3(Lepton):
           ttt = " "
         # self._capture_buf[i, 0] = fid & 0x0FFF
         # self._capture_buf[i, 1] = 0
-        print "0x{0:04x} 0x{1:04x} : TTT={2} #{3:2} : crc={1}".format(fid, crc, ttt, fnum)
-      print "---"
+        print("0x{0:04x} 0x{1:04x} : TTT={2} #{3:2} : crc={1}".format(fid, crc, ttt, fnum))
+      print("---")
 
-    print "frame processed int {0}s, {1}hz".format(end-start, 1.0/(end-start))
+    print("frame processed int {0}s, {1}hz".format(end-start, 1.0/(end-start)))
 
     data_buffer.shape = (240, 80)
     data_buffer[:,:] = self._capture_buf[:,2:]
