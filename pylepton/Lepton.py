@@ -44,7 +44,7 @@ class Lepton(object):
   MODE = SPI_MODE_3
   BITS = 8
   SPEED = 18000000
-  SPIDEV_MESSAGE_LIMIT = 24
+  SPIDEV_MESSAGE_LIMIT = 8
 
   def __init__(self, spi_dev = "/dev/spidev0.0"):
     self._spi_dev = spi_dev
