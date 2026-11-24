@@ -1,0 +1,47 @@
+name: Bug report
+description: Something in this repository fails or behaves wrongly.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This repository covers the pylepton Python library for reading a Lepton over SPI. GroupGets provides this code as is and does not offer support, but clear reports help everyone who uses it.
+
+        This repository is for a Lepton read over VoSPI (SPI). For a PureThermal board over USB, use [purethermal1-uvc-capture](https://github.com/groupgets/purethermal1-uvc-capture) or [GetThermal](https://github.com/groupgets/GetThermal).
+
+        Before filing, please check the [README](https://github.com/groupgets/pylepton#readme) and search existing issues, open and closed.
+  - type: dropdown
+    id: lepton
+    attributes:
+      label: "Lepton model"
+      description: "Printed on the label on the back of the Lepton module."
+      options:
+        - "Lepton 3.5"
+        - "Lepton 3.1R"
+        - "Lepton 3.0"
+        - "Lepton 2.5"
+        - "Lepton 2.0"
+        - "Not sure"
+    validations:
+      required: true
+  - type: input
+    id: setup
+    attributes:
+      label: "Your setup"
+      description: "Whatever you know of: Raspberry Pi model, OS, the SPI device your code opens, and which pin CS is wired to."
+      placeholder: "Pi 4, bookworm, /dev/spidev0.0 with CS on CE0"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: "What happened?"
+      description: "What you did, what you expected, and what happened instead."
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: "Output or screenshot"
+      description: "Paste any error output, or drag in a screenshot."
+    validations:
+      required: false
